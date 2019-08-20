@@ -2,4 +2,4 @@
 Metadata parser
 
 ## Usage
-mdparser <md.xml>
+mdparser.py <md.xml>
