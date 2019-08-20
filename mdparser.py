@@ -50,6 +50,7 @@ if (md_expires and md_expires < timedelta(days = 1)):
 
 if (crt_expires and crt_expires < timedelta(days = 7)):
   print("CRT expires: %ss" % crt_expires)
+  sys.exit(1)
 
 exit(0)
 md.close()
