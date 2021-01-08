@@ -1,6 +1,6 @@
 asn1crypto==0.24.0
 cffi==1.12.3
-cryptography==2.7
+cryptography==3.2
 iso8601==0.1.12
 lxml==4.4.1
 pkg-resources==0.0.0
