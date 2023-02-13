@@ -5,3 +5,4 @@ iso8601
 lxml
 pycparser
 six
+signxml
