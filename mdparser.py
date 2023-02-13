@@ -4,6 +4,7 @@ import sys
 import utils
 from datetime import timedelta
 
+
 def parse_saml_metadata(source):
   validation = dict()
   validation['error'] = None
@@ -17,12 +18,15 @@ def parse_saml_metadata(source):
     # XSD validation
     utils.validate_document(t)
 
+    # Signature validation
+    utils.validate_signature(t)
+
     # Expiration check
     validation['md_expires'] = utils.metadata_expiration(t)
 
     # Certificate expiration
     # Everybody seems to use expired TSC's
-    #validation['crt_expires'] = utils.certificate_expiration(t)
+    # validation['crt_expires'] = utils.certificate_expiration(t)
 
   except Exception as ex:
     validation['error'] = ex
@@ -44,11 +48,11 @@ crt_expires = v['crt_expires']
 if (error):
   print("Error: %s" % error)
 
-if (md_expires and md_expires < timedelta(days = 1)):
+if (md_expires and md_expires < timedelta(days=1)):
   print("MD expires: %ss" % md_expires)
   sys.exit(1)
 
-if (crt_expires and crt_expires < timedelta(days = 7)):
+if (crt_expires and crt_expires < timedelta(days=7)):
   print("CRT expires: %ss" % crt_expires)
   sys.exit(1)
 

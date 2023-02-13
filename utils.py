@@ -1,4 +1,5 @@
 from lxml import etree
+from signxml import XMLVerifier, InvalidSignature
 from datetime import datetime, timedelta
 import iso8601
 import pkg_resources
@@ -19,6 +20,7 @@ NS = dict(md="urn:oasis:names:tc:SAML:2.0:metadata",
           xsi="http://www.w3.org/2001/XMLSchema-instance",
           ser="http://eidas.europa.eu/metadata/servicelist")
 
+
 class ResourceResolver(etree.Resolver):
   def __init__(self):
     super(ResourceResolver, self).__init__()
@@ -37,8 +39,10 @@ class ResourceResolver(etree.Resolver):
     else:
       raise ValueError("Unable to locate %s" % fn)
 
+
 def iso2datetime(s):
   return iso8601.parse_date(s)
+
 
 def schema():
   try:
@@ -47,13 +51,15 @@ def schema():
     st = etree.parse(pkg_resources.resource_stream(__name__, "schema/schema.xsd"), parser)
     schema = etree.XMLSchema(st)
   except etree.XMLSchemaParseError as ex:
-    log.error(xml_error(ex.error_log))
+    print(ex.error_log)
     raise ex
 
   return schema
 
+
 def parse_xml(io):
-  return etree.parse(io, parser=etree.XMLParser(resolve_entities=False,collect_ids=False))
+  return etree.parse(io, parser=etree.XMLParser(resolve_entities=False, collect_ids=False))
+
 
 def root(t):
   if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
@@ -61,11 +67,28 @@ def root(t):
   else:
     return t
 
+
 def validate_document(t):
   schema().assertValid(t)
 
+
+def validate_signature(t):
+  certs = t.iterfind('.//{%s}X509Certificate' % NS['ds'])
+  valid = False
+  exception = Exception
+  for cert in certs:
+    try:
+      XMLVerifier().verify(t, x509_cert=cert.text).signed_xml
+      valid = True
+      break
+    except InvalidSignature as e:
+      exception = e
+  if not valid:
+    raise exception
+
+
 def metadata_expiration(t):
-  delta = timedelta(seconds = 0)
+  delta = timedelta(seconds=0)
   if t.tag in ('{%s}EntityDescriptor' % NS['md'], '{%s}EntitiesDescriptor' % NS['md']):
     valid_until = t.get('validUntil', None)
     if valid_until is not None:
@@ -73,8 +96,9 @@ def metadata_expiration(t):
       vu = iso2datetime(valid_until)
       now = now.replace(microsecond=0)
       vu = vu.replace(microsecond=0, tzinfo=None)
-      delta = vu- now
+      delta = vu - now
   return delta
+
 
 def certificate_expiration(t):
   deltas = []
@@ -84,7 +108,7 @@ def certificate_expiration(t):
     pem = ""
     s = 0
     while s < len(cert):
-      pem += "\n%s" % cert[s:s+64]
+      pem += "\n%s" % cert[s:s + 64]
       s += 64
     pem = '-----BEGIN CERTIFICATE-----' + pem + '\n-----END CERTIFICATE-----'
     cert = x509.load_pem_x509_certificate(pem.encode('utf8'), default_backend())
@@ -92,6 +116,6 @@ def certificate_expiration(t):
     vu = cert.not_valid_after
     delta = vu - now
     deltas.append(delta)
-    if delta < timedelta(days = 7):
+    if delta < timedelta(days=7):
       print(cert.not_valid_after)
   return min(deltas)

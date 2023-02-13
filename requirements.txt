@@ -1,8 +1,7 @@
-asn1crypto==0.24.0
-cffi==1.12.3
-cryptography==39.0.1
-iso8601==0.1.12
-lxml==4.9.1
-pkg-resources==0.0.0
-pycparser==2.19
-six==1.12.0
+asn1crypto
+cffi
+cryptography
+iso8601
+lxml
+pycparser
+six
